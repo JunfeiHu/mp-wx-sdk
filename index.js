@@ -141,14 +141,28 @@ class WeChat {
     return this.setOption('navigateBack', options);
   }
   /**
-   *关闭当前页面，返回上一页面或多级页面。可通过 getCurrentPages 获取当前的页面栈，决定需要返回几层。
+   *显示消息提示框
    *
    * @param {object} options delta     {number}    是  返回的页面数，如果 delta 大于现有页面数，则返回到首页。
    *                         complete  {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
-   * @returns {Promise} errMsg  {string}  "navigateBack:ok"
+   * @returns {Promise}
    */
   async showToast(options) {
     return this.setOption('showToast', options);
+  }
+  /**
+   *显示模态对话框
+   *
+   * @param {object} options  title     {string}    是  提示的内容
+   *                          icon      {string}    否  默认值：'success'  图标（'success' 显示成功图标，'loading' 显示加载图标，此时 title 文本最多显示 7 个汉字长度；'none' 不显示图标，此时 title 文本最多可显示两行）
+   *                          image     {string}    否  自定义图标的本地路径，image 的优先级高于 icon
+   *                          duration  {number}    否  默认值：1500   提示的延迟时间  
+   *                          mask      {boolean}   否  默认值：false  是否显示透明蒙层，防止触摸穿透  
+   *                          complete  {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
+   * @returns {Promise}
+   */
+  async showModal(options) {
+    return this.setOption('showModal', options);
   }
 }
 module.exports = WeChat;
