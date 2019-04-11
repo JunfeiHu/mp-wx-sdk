@@ -1,0 +1,18 @@
+{
+  "name": "mp-wx-sdk",
+  "version": "1.0.2",
+  "description": "二次封装微信接口，将微信接口Promise化，方便使用async/await",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JunfeiHu/mp-wx-sdk.git"
+  },
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Faber",
+  "license": "ISC",
+  "dependencies": {
+    "bluebird": "^3.5.4"
+  }
+}
