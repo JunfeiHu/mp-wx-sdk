@@ -10,16 +10,30 @@ class WeChat {
     this.wx = wx;
   }
   /**
-     * 微信接口Promise化工具方法
-     * 
-     * @param {function} api  是  wx中的方法
-     */
+   * 微信接口Promise化工具方法
+   * 
+   * @param {function} api  是  wx中的方法
+   */
   promisify(api) {
+    if (!this.wx) {
+      throw new Error('wx对象不存在');
+    }
     return (options, ...params) => {
       return new Promise((resolve, reject) => {
         api(Object.assign({}, options, { success: resolve, fail: reject }), ...params);
       });
     };
+  }
+  /**
+   * 设置参数，并判断wx对象是否存在
+   * @param {string} fun      是  wx中的方法名称字符串
+   * @param {object} options  否  参数根据不同方法传递的不同参数
+   */
+  setOption(fun, options) {
+    if (!this.wx) {
+      throw new Error('wx对象不存在');
+    }
+    return this.promisify(this.wx[fun])(options);
   }
   /**
    *微信登录
@@ -30,10 +44,7 @@ class WeChat {
    *                    code    {string}  用户登录凭证（有效期五分钟）。开发者需要在开发者服务器后台调用 auth.code2Session，使用 code 换取 openid 和 session_key 等信息
    */
   async login(options) {
-    if (!this.wx) {
-      throw new Error('wx对象不存在');
-    }
-    return this.promisify(this.wx.login)(options);
+    return this.setOption('login', options);
   }
   /**
    *检查登录态是否过期
@@ -42,7 +53,7 @@ class WeChat {
    * @returns {Promise} errMsg  {string}  "checkSession:ok"
    */
   async checkSession(options) {
-    return this.promisify(this.wx.checkSession)(options);
+    return this.setOption('checkSession', options);
   }
   /**
    *获取系统信息
@@ -77,7 +88,7 @@ class WeChat {
    *                    wifiEnabled                  {boolean}  Wi-Fi 的系统开关
    */
   async getSystemInfo(options) {
-    return this.promisify(this.wx.getSystemInfo)(options);
+    return this.setOption('getSystemInfo', options);
   }
   /**
    *跳转到 tabBar 页面，并关闭其他所有非 tabBar 页面
@@ -87,7 +98,7 @@ class WeChat {
    * @returns {Promise} errMsg  {string}  "switchTab:ok"
    */
   async switchTab(options) {
-    return this.promisify(this.wx.switchTab)(options);
+    return this.setOption('switchTab', options);
   }
   /**
    *关闭所有页面，打开到应用内的某个页面
@@ -97,7 +108,7 @@ class WeChat {
    * @returns {Promise} errMsg  {string}  "reLaunch:ok"
    */
   async reLaunch(options) {
-    return this.promisify(this.wx.reLaunch)(options);
+    return this.setOption('reLaunch', options);
   }
   /**
    *关闭当前页面，跳转到应用内的某个页面。但是不允许跳转到 tabbar 页面。
@@ -107,7 +118,7 @@ class WeChat {
    * @returns {Promise} errMsg  {string}  "redirectTo:ok"
    */
   async redirectTo(options) {
-    return this.promisify(this.wx.redirectTo)(options);
+    return this.setOption('redirectTo', options);
   }
   /**
    *保留当前页面，跳转到应用内的某个页面。但是不能跳到 tabbar 页面。使用 this.wx.navigateBack 可以返回到原页面。小程序中页面栈最多十层。
@@ -117,7 +128,7 @@ class WeChat {
    * @returns {Promise} errMsg  {string}  "navigateTo:ok"
    */
   async navigateTo(options) {
-    return this.promisify(this.wx.navigateTo)(options);
+    return this.setOption('navigateTo', options);
   }
   /**
    *关闭当前页面，返回上一页面或多级页面。可通过 getCurrentPages 获取当前的页面栈，决定需要返回几层。
@@ -127,7 +138,7 @@ class WeChat {
    * @returns {Promise} errMsg  {string}  "navigateBack:ok"
    */
   async navigateBack(options) {
-    return this.promisify(this.wx.navigateBack)(options);
+    return this.setOption('navigateBack', options);
   }
   /**
    *关闭当前页面，返回上一页面或多级页面。可通过 getCurrentPages 获取当前的页面栈，决定需要返回几层。
@@ -137,7 +148,7 @@ class WeChat {
    * @returns {Promise} errMsg  {string}  "navigateBack:ok"
    */
   async showToast(options) {
-    return this.promisify(this.wx.showToast)(options);
+    return this.setOption('showToast', options);
   }
 }
 module.exports = WeChat;
