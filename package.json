@@ -1,6 +1,6 @@
 {
   "name": "mp-wx-sdk",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "二次封装微信接口，将微信接口Promise化，方便使用async/await",
   "repository": {
     "type": "git",
