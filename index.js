@@ -45,7 +45,7 @@ class WeChat {
    * @param {object}  options   timeout   {number}    否  超时时间，单位ms
    *                            complete  {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
    * @returns {Promise}         errMsg    {string}        "login:ok"
-   *                            code      {string}        用户登录凭证（有效期五分钟）。开发者需要在开发者服务器后台调用 auth.code2Session，使用 code 换取 openid 和 session_key 等信息
+   *                            code      {string}        用户登录凭证（有效期五分钟）。需要在服务器后台调用 auth.code2Session，使用 code 换取 openid 和 session_key 等信息
    */
   async login(options) {
     return this.setOption('login', options);
@@ -386,27 +386,27 @@ class WeChat {
    *      3、可以配置端口，如 https://myserver.com:8080，但是配置后只能向 https://myserver.com:8080 发起请求。如果向 https://myserver.com、https://myserver.com:9091 等 URL 请求则会失败。
    *      4、如果不配置端口。如 https://myserver.com，那么请求的 URL 中也不能包含端口，甚至是默认的 443 端口也不可以。如果向 https://myserver.com:443 请求则会失败。
    *      5、域名必须经过 ICP 备案；
-   *      6、出于安全考虑，api.weixin.qq.com 不能被配置为服务器域名，相关API也不能在小程序内调用。 开发者应将 AppSecret 保存到后台服务器中，通过服务器使用 getAccessToken 接口获取 access_token，并调用相关 API；
+   *      6、出于安全考虑，api.weixin.qq.com 不能被配置为服务器域名，相关API也不能在小程序内调用。 应将 AppSecret 保存到后台服务器中，通过服务器使用 getAccessToken 接口获取 access_token，并调用相关 API；
    *      7、对于每个接口，分别可以配置最多 20 个域名
    *    超时时间
    *      1、默认超时时间和最大超时时间都是 60s；
    *      2、超时时间可以在 app.json 或 game.json 中通过 networktimeout 配置。
    *    使用限制
-   *      1、网络请求的 referer header 不可设置。其格式固定为 https://servicewechat.com/{appid}/{version}/page-frame.html，其中 {appid} 为小程序的 appid，{version} 为小程序的版本号，版本号为 0 表示为开发版、体验版以及审核版本，版本号为 devtools 表示为开发者工具，其余为正式版本；
+   *      1、网络请求的 referer header 不可设置。其格式固定为 https://servicewechat.com/{appid}/{version}/page-frame.html，其中 {appid} 为小程序的 appid，{version} 为小程序的版本号，版本号为 0 表示为开发版、体验版以及审核版本，版本号为 devtools 表示为工具，其余为正式版本；
    *      2、wx.request、wx.uploadFile、wx.downloadFile 的最大并发限制是 10 个；
    *      3、小程序进入后台运行后（非置顶聊天），如果 5s 内网络请求没有结束，会回调错误信息 fail interrupted；在回到前台之前，网络请求接口调用都会无法调用。
    *    返回值编码
    *      1、建议服务器返回值使用 UTF-8 编码。对于非 UTF-8 编码，小程序会尝试进行转换，但是会有转换失败的可能。
    *      2、小程序会自动对 BOM 头进行过滤（只过滤一个BOM头）。
    *    回调函数
-   *      1、只要成功接收到服务器返回，无论 statusCode 是多少，都会进入 success 回调。请开发者根据业务逻辑对返回值进行判断。
+   *      1、只要成功接收到服务器返回，无论 statusCode 是多少，都会进入 success 回调。请根据业务逻辑对返回值进行判断。
    *    data 参数说明
    *      最终发送给服务器的数据是 String 类型，如果传入的 data 不是 String 类型，会被转换成 String 。转换规则如下：
    *      1、对于 GET 方法的数据，会将数据转换成 query string（encodeURIComponent(k)=encodeURIComponent(v)&encodeURIComponent(k)=encodeURIComponent(v)...）
    *      2、对于 POST 方法且 header['content-type'] 为 application/json 的数据，会对数据进行 JSON 序列化
    *      3、对于 POST 方法且 header['content-type'] 为 application/x-www-form-urlencoded 的数据，会将数据转换成 query string （encodeURIComponent(k)=encodeURIComponent(v)&encodeURIComponent(k)=encodeURIComponent(v)...）
    *
-   * @param {object}  options   url             {string}    是  开发者服务器接口地址  
+   * @param {object}  options   url             {string}    是  服务器接口地址  
    *                            data            {string/object/ArrayBuffer}    否  请求的参数  
    *                            header          {Object}    否  设置请求的 header，header 中不能设置 Referer。content-type 默认为 application/json
    *                            method          {string}    否  默认值：GET   HTTP 请求方法（可选值：OPTIONS / GET / HEAD / POST / PUT / DELETE / TRACE / CONNECT）
@@ -414,26 +414,178 @@ class WeChat {
    *                            responseType    {string}    否  默认值：text  响应的数据类型（可选值：text  响应的数据为文本；arraybuffer 响应的数据为 ArrayBuffer）
    *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
    * @returns {Promise}         errMsg          {string}        "request:ok"
-   *                            data            {string/Object/Arraybuffer} 开发者服务器返回的数据
-   *                            statusCode      {number}        开发者服务器返回的 HTTP 状态码
-   *                            header          {Object}        开发者服务器返回的 HTTP Response Header
+   *                            data            {string/Object/Arraybuffer} 服务器返回的数据
+   *                            statusCode      {number}        服务器返回的 HTTP 状态码
+   *                            header          {Object}        服务器返回的 HTTP Response Header
    */
   async request(options) {
     return this.setOption('request', options);
   }
   /**
-   * 取消监听窗口尺寸变化事件
+   * 发起 HTTPS GET 网络请求
+   * @param {string} url                          是  服务器接口地址
+   * @param {string/object/ArrayBuffer} data      否  请求的参数  
+   * @param {Object} header                       否  设置请求的 header，header 中不能设置 Referer。content-type 默认为 application/json
+   *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
+   * @returns {Promise}         errMsg          {string}        "request:ok"
+   *                            data            {string/Object/Arraybuffer} 服务器返回的数据
+   *                            statusCode      {number}        服务器返回的 HTTP 状态码
+   *                            header          {Object}        服务器返回的 HTTP Response Header
+   */
+  async get(url, data, header) {
+    return this.setOption('request', Object.assign({}, { method: 'GET', url, data, header }));
+  }
+  /**
+   * 发起 HTTPS POST 网络请求
+   * @param {string} url                          是  服务器接口地址
+   * @param {string/object/ArrayBuffer} data      否  请求的参数  
+   * @param {Object} header                       否  设置请求的 header，header 中不能设置 Referer。content-type 默认为 application/json
+   *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
+   * @returns {Promise}         errMsg          {string}        "request:ok"
+   *                            data            {string/Object/Arraybuffer} 服务器返回的数据
+   *                            statusCode      {number}        服务器返回的 HTTP 状态码
+   *                            header          {Object}        服务器返回的 HTTP Response Header
+   */
+  async post(url, data, header) {
+    return this.setOption('request', Object.assign({}, { method: 'POST', url, data, header }));
+  }
+  /**
+   * 发起 HTTPS PUT 网络请求
+   * @param {string} url                          是  服务器接口地址
+   * @param {string/object/ArrayBuffer} data      否  请求的参数  
+   * @param {Object} header                       否  设置请求的 header，header 中不能设置 Referer。content-type 默认为 application/json
+   *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
+   * @returns {Promise}         errMsg          {string}        "request:ok"
+   *                            data            {string/Object/Arraybuffer} 服务器返回的数据
+   *                            statusCode      {number}        服务器返回的 HTTP 状态码
+   *                            header          {Object}        服务器返回的 HTTP Response Header
+   */
+  async put(url, data, header) {
+    return this.setOption('request', Object.assign({}, { method: 'PUT', url, data, header }));
+  }
+  /**
+   * 发起 HTTPS DELETE 网络请求
+   * @param {string} url                          是  服务器接口地址
+   * @param {string/object/ArrayBuffer} data      否  请求的参数  
+   * @param {Object} header                       否  设置请求的 header，header 中不能设置 Referer。content-type 默认为 application/json
+   *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
+   * @returns {Promise}         errMsg          {string}        "request:ok"
+   *                            data            {string/Object/Arraybuffer} 服务器返回的数据
+   *                            statusCode      {number}        服务器返回的 HTTP 状态码
+   *                            header          {Object}        服务器返回的 HTTP Response Header
+   */
+  async delete(url, data, header) {
+    return this.setOption('request', Object.assign({}, { method: 'DELETE', url, data, header }));
+  }
+
+  /**
+   * 下载文件资源到本地。客户端直接发起一个 HTTPS GET 请求，返回文件的本地临时路径。
+   * 注意：
+   *    请在服务端响应的 header 中指定合理的 Content-Type 字段，以保证客户端正确处理文件类型。
    *
-   * @param {object}  options   url             {string}    是  开发者服务器接口地址
+   * @param {object}  options   url             {string}    是  服务器接口地址
    *                            header          {Object}    否  HTTP 请求的 Header，Header 中不能设置 Referer  
    *                            filePath        {string}    否  指定文件下载后存储的路径
    *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
    * @returns {Promise}         errMsg          {string}        "downloadFile:ok"
    *                            tempFilePath    {string}        临时文件路径。如果没传入 filePath 指定文件存储路径，则下载后的文件会存储到一个临时文件
-   *                            statusCode      {number}        开发者服务器返回的 HTTP 状态码
+   *                            statusCode      {number}        服务器返回的 HTTP 状态码
    */
   async downloadFile(options) {
     return this.setOption('downloadFile', options);
+  }
+  /**
+   * 将本地资源上传到服务器。客户端发起一个 HTTPS POST 请求，其中 content-type 为 multipart/form-data。
+   *
+   * @param {object}  options   url             {string}    是  服务器接口地址
+   *                            filePath        {string}    是  要上传文件资源的路径
+   *                            name            {string}    是  文件对应的 key，在服务端可以通过这个 key 获取文件的二进制内容
+   *                            header          {Object}    否  HTTP 请求的 Header，Header 中不能设置 Referer  
+   *                            formData        {Object}    否  HTTP 请求中其他额外的 form data
+   *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
+   * @returns {Promise}         errMsg          {string}        "uploadFile:ok"
+   *                            data            {string}        服务器返回的数据
+   *                            statusCode      {number}        服务器返回的 HTTP 状态码
+   */
+  async uploadFile(options) {
+    return this.setOption('uploadFile', options);
+  }
+  /**
+   * 创建一个 WebSocket 连接
+   *
+   * @param {object}  options   url             {string}    是  服务器 wss 接口地址
+   *                            header          {Object}    否  HTTP 请求的 Header，Header 中不能设置 Referer  
+   *                            protocols       {Array.<string>}  否  子协议数组
+   *                            tcpNoDelay      {boolean}   否  默认值：false  文件对应的 key，在服务端可以通过这个 key 获取文件的二进制内容
+   *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
+   * @returns {Promise}         errMsg          {string}        "connectSocket:ok"
+   *                            statusCode      {number}        服务器返回的 HTTP 状态码
+   */
+  async connectSocket(options) {
+    return this.setOption('connectSocket', options);
+  }
+  /**
+   * 监听 WebSocket 连接打开事件
+   *
+   * @param {function}  options   WebSocket 连接打开事件的回调函数
+   * @returns {Promise}           errMsg          {string}        "onSocketOpen:ok"
+   *                              header          {object}        连接成功的 HTTP 响应 Header
+   */
+  async onSocketOpen(options) {
+    return this.setOption('onSocketOpen', options);
+  }
+  /**
+   * 监听 WebSocket 连接关闭事件
+   *
+   * @param {function}  options   WebSocket 连接打开事件的回调函数
+   * @returns {Promise}           errMsg          {string}        "onSocketClose:ok"
+   *                              header          {object}        连接成功的 HTTP 响应 Header
+   */
+  async onSocketClose(options) {
+    return this.setOption('onSocketClose', options);
+  }
+  /**
+   * 监听 WebSocket 接受到服务器的消息事件
+   *
+   * @param {function}  options   WebSocket 连接打开事件的回调函数
+   * @returns {Promise}           errMsg          {string}        "onSocketMessage:ok"
+   *                              header          {object}        连接成功的 HTTP 响应 Header
+   */
+  async onSocketMessage(options) {
+    return this.setOption('onSocketMessage', options);
+  }
+  /**
+   * 监听 WebSocket 错误事件
+   *
+   * @param {function}  options   WebSocket 连接打开事件的回调函数
+   * @returns {Promise}           errMsg          {string}        "onSocketError:ok"
+   *                              header          {object}        连接成功的 HTTP 响应 Header
+   */
+  async onSocketError(options) {
+    return this.setOption('onSocketError', options);
+  }
+  /**
+   * 通过 WebSocket 连接发送数据。需要先 wx.connectSocket，并在 wx.onSocketOpen 回调之后才能发送。
+   *
+   * @param {object}  options   data            {string/ArrayBuffer}  是  需要发送的内容
+   *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
+   * @returns {Promise}         errMsg          {string}        "sendSocketMessage:ok"
+   *                            statusCode      {number}        服务器返回的 HTTP 状态码
+   */
+  async sendSocketMessage(options) {
+    return this.setOption('sendSocketMessage', options);
+  }
+  /**
+   * 关闭 WebSocket 连接
+   *
+   * @param {object}  options   code            {number}    否  默认值：1000（表示正常关闭连接）  一个数字值表示关闭连接的状态号，表示连接被关闭的原因。
+   *                            reason          {string}    否  一个可读的字符串，表示连接被关闭的原因。这个字符串必须是不长于 123 字节的 UTF-8 文本（不是字符）。
+   *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
+   * @returns {Promise}         errMsg          {string}        "closeSocket:ok"
+   *                            statusCode      {number}        服务器返回的 HTTP 状态码
+   */
+  async closeSocket(options) {
+    return this.setOption('closeSocket', options);
   }
 }
 module.exports = WeChat;
