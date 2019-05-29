@@ -20,7 +20,11 @@ class WeChat {
     }
     return (options, ...params) => {
       return new Promise((resolve, reject) => {
-        this.task = api(Object.assign({}, options, { success: resolve, fail: reject }), ...params);
+        if (typeof options === 'function') {
+          resolve(api(options));
+        } else {
+          api(Object.assign({}, options, { success: resolve, fail: reject }), ...params);
+        }
       });
     };
   }
@@ -50,6 +54,53 @@ class WeChat {
   async login(options) {
     return this.setOption('login', options);
   }
+
+  /**
+   * 微信获取用户信息
+   *
+   * @param {object}  options   withCredentials  {boolean}    否  是否带上登录态信息。当 withCredentials 为 true 时，要求此前有调用过 wx.login 且登录态尚未过期，
+   *                                                              此时返回的数据会包含 encryptedData, iv 等敏感信息；当 withCredentials 为 false 时，
+   *                                                              不要求有登录态，返回的数据不包含 encryptedData, iv 等敏感信息。
+   *                            lang      {string}    否  默认值:en  显示用户信息的语言
+   *                            complete  {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
+   * @returns {Promise}         errMsg    {string}        "getUserInfo:ok"
+   *                            code      {string}        用户登录凭证（有效期五分钟）。需要在服务器后台调用 auth.code2Session，使用 code 换取 openid 和 session_key 等信息
+   */
+  async getUserInfo(options) {
+    return this.setOption('getUserInfo', options);
+  }
+
+  /**
+   * 发起授权请求
+   *
+   * @param {object}  options   scope     {string}    是  需要获取权限的 scope
+   *                                                      scope授权列表
+   *                                                      scope.userInfo          wx.getUserInfo                      用户信息
+   *                                                      scope.userLocation      wx.getLocation, wx.chooseLocation   地理位置
+   *                                                      scope.address           wx.chooseAddress                    通讯地址
+   *                                                      scope.invoiceTitle      wx.chooseInvoiceTitle               发票抬头
+   *                                                      scope.invoice           wx.chooseInvoice                    获取发票
+   *                                                      scope.werun             wx.getWeRunData                     微信运动步数
+   *                                                      scope.record            wx.startRecord                      录音功能
+   *                                                      scope.writePhotosAlbum  wx.saveImageToPhotosAlbum, wx.saveVideoToPhotosAlbum  保存到相册
+   *                                                      scope.camera            <camera /> 组件                     摄像头
+   *                            complete  {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
+   * @returns {Promise}         errMsg    {string}        "getSetting:ok"
+   */
+  async authorize(options) {
+    return this.setOption('authorize', options);
+  }
+
+  /**
+   * 获取授权信息
+   *
+   * @param {object}  options   complete  {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
+   * @returns {Promise}         errMsg    {string}        "getSetting:ok"
+   */
+  async getSetting(options) {
+    return this.setOption('getSetting', options);
+  }
+
   /**
    * 检查登录态是否过期
    *
@@ -147,36 +198,44 @@ class WeChat {
   /**
    * 显示消息提示框
    *
-   * @param {object}  options   delta     {number}    是  返回的页面数，如果 delta 大于现有页面数，则返回到首页。
+   * @param {object}  options   title     {string}    是  提示的内容
+   *                            icon      {string}    否  默认值： 'success'  图标
+   *                                                      （可选值为：'success' 显示成功图标，'loading' 显示加载图标，此时 title 文本最多显示 7 个汉字长度；'none' 不显示图标，此时 title 文本最多可显示两行）
+   *                            image     {string}    否  自定义图标的本地路径，image 的优先级高于 icon
+   *                            duration  {number}    否  默认值： 1500   提示的延迟时间  
+   *                            mask      {boolean}   否  默认值： false  是否显示透明蒙层，防止触摸穿透  
    *                            complete  {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
-   * @returns {Promise}
+   * @returns {Promise}         errMsg    {string}        "showToast:ok"
    */
   async showToast(options) {
     return this.setOption('showToast', options);
   }
   /**
-   * 显示模态对话框
-   *
-   * @param {object}  options   title     {string}    是  提示的内容
-   *                            icon      {string}    否  默认值：'success'  图标
-   *                                                      （可选值为：'success' 显示成功图标，'loading' 显示加载图标，此时 title 文本最多显示 7 个汉字长度；'none' 不显示图标，此时 title 文本最多可显示两行）
-   *                            image     {string}    否  自定义图标的本地路径，image 的优先级高于 icon
-   *                            duration  {number}    否  默认值：1500   提示的延迟时间  
-   *                            mask      {boolean}   否  默认值：false  是否显示透明蒙层，防止触摸穿透  
-   *                            complete  {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
-   * @returns {Promise}
-   */
-  async showModal(options) {
-    return this.setOption('showModal', options);
-  }
-  /**
    * 隐藏消息提示框
    *
    * @param {object}  options   complete  {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
-   * @returns {Promise}
+   * @returns {Promise}         errMsg    {string}        "hideToast:ok"
    */
   async hideToast(options) {
     return this.setOption('hideToast', options);
+  }
+  /**
+   * 显示模态对话框
+   *
+   * @param {object}  options   title         {string}    是  提示的内容
+   *                            content       {string}    是  提示的内容
+   *                            showCancel    {boolean}   否  默认值： true     是否显示取消按钮
+   *                            cancelText    {string}    否  默认值： '取消'   取消按钮的文字，最多 4 个字符
+   *                            cancelColor   {string}    否  默认值： #000000  取消按钮的文字颜色，必须是 16 进制格式的颜色字符串
+   *                            confirmText   {string}    否  默认值： '确定'   确认按钮的文字，最多 4 个字符
+   *                            confirmColor  {string}    否  默认值： #576B95  确认按钮的文字颜色，必须是 16 进制格式的颜色字符串
+   *                            complete      {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
+   * @returns {Promise}         errMsg        {string}        "showModal:ok"
+   *                            cancel        {boolean}       为true表示点击了取消
+   *                            confirm       {boolean}       为true表示点击了确定
+   */
+  async showModal(options) {
+    return this.setOption('showModal', options);
   }
   /**
    * 显示 loading 提示框。需主动调用 hideLoading 才能关闭提示框
@@ -184,9 +243,9 @@ class WeChat {
    *         showLoading 应与 hideLoading 配对使用
    *
    * @param {object}  options   title     {string}    是  提示的内容
-   *                            mask      {boolean}   否  默认值：false  是否显示透明蒙层，防止触摸穿透
+   *                            mask      {boolean}   否  默认值： false  是否显示透明蒙层，防止触摸穿透
    *                            complete  {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
-   * @returns {Promise}
+   * @returns {Promise}         errMsg    {string}        "showLoading:ok"
    */
   async showLoading(options) {
     return this.setOption('showLoading', options);
@@ -195,7 +254,7 @@ class WeChat {
    * 隐藏 loading 提示框
    *
    * @param {object}  options   complete  {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
-   * @returns {Promise}
+   * @returns {Promise}         errMsg    {string}        "hideLoading:ok"
    */
   async hideLoading(options) {
     return this.setOption('hideLoading', options);
@@ -204,9 +263,9 @@ class WeChat {
    * 显示操作菜单
    *
    * @param {object}  options   itemList  {Array.<string>}  是  按钮的文字数组，数组长度最大为 6
-   *                            itemColor {string}          否  默认值：#000000 按钮的文字颜色
+   *                            itemColor {string}          否  默认值： #000000 按钮的文字颜色
    *                            complete  {function}        否  接口调用结束的回调函数（调用成功、失败都会执行）
-   * @returns {Promise}         errMsg    {string}              "navigateBack:ok"
+   * @returns {Promise}         errMsg    {string}              "showActionSheet:ok"
    *                            tapIndex  {number}              用户点击的按钮序号，从上到下的顺序，从0开始
    */
   async showActionSheet(options) {
@@ -216,7 +275,7 @@ class WeChat {
    * 在当前页面显示导航条加载动画
    *
    * @param {object}  options   complete  {function}        否  接口调用结束的回调函数（调用成功、失败都会执行）
-   * @returns {Promise}
+   * @returns {Promise}         errMsg    {string}              "showNavigationBarLoading:ok"
    */
   async showNavigationBarLoading(options) {
     return this.setOption('showNavigationBarLoading', options);
@@ -225,7 +284,7 @@ class WeChat {
    * 在当前页面隐藏导航条加载动画
    *
    * @param {object}  options   complete  {function}        否  接口调用结束的回调函数（调用成功、失败都会执行）
-   * @returns {Promise}
+   * @returns {Promise}         errMsg    {string}              "hideNavigationBarLoading:ok"
    */
   async hideNavigationBarLoading(options) {
     return this.setOption('hideNavigationBarLoading', options);
@@ -235,7 +294,7 @@ class WeChat {
    *
    * @param {object}  options   title     {string}          是  页面标题
    *                            complete  {function}        否  接口调用结束的回调函数（调用成功、失败都会执行）
-   * @returns {Promise}
+   * @returns {Promise}         errMsg    {string}              "setNavigationBarTitle:ok"
    */
   async setNavigationBarTitle(options) {
     return this.setOption('setNavigationBarTitle', options);
@@ -245,12 +304,12 @@ class WeChat {
    *
    * @param {object}  options   frontColor      {string}    是  前景颜色值，包括按钮、标题、状态栏的颜色，仅支持 #ffffff 和 #000000
    *                            backgroundColor {string}    是  背景颜色值，有效值为十六进制颜色
-   *                            animation       {Object}    是  动画效果
+   *                            animation       {Object}    否  动画效果
    *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
    *                  options.animation 结构
-   *                            duration        {number}    否  默认值：0         动画变化时间，单位 ms
-   *                            timingFunc      {string}    否  默认值：'linear'  动画变化方式（可选值为：'linear':动画从头到尾的速度是相同的；'easeIn':动画以低速开始；'easeOut':动画以低速结束；'easeInOut':动画以低速开始和结束）
-   * @returns {Promise}
+   *                            duration        {number}    否  默认值： 0         动画变化时间，单位 ms
+   *                            timingFunc      {string}    否  默认值： 'linear'  动画变化方式（可选值为：'linear':动画从头到尾的速度是相同的；'easeIn':动画以低速开始；'easeOut':动画以低速结束；'easeInOut':动画以低速开始和结束）
+   * @returns {Promise}         errMsg          {string}        "setNavigationBarColor:ok"
    */
   async setNavigationBarColor(options) {
     return this.setOption('setNavigationBarColor', options);
@@ -260,7 +319,7 @@ class WeChat {
    *
    * @param {object}  options   textStyle       {string}    是  下拉背景字体、loading 图的样式（可选值为：'dark':dark 样式；'light':light 样式）。
    *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
-   * @returns {Promise}
+   * @returns {Promise}         errMsg          {string}        "setBackgroundTextStyle:ok"
    */
   async setBackgroundTextStyle(options) {
     return this.setOption('setBackgroundTextStyle', options);
@@ -268,9 +327,9 @@ class WeChat {
   /**
    * 显示 tabBar 某一项的右上角的红点
    *
-   * @param {object}  options   index           {number}    是  tabBar 的哪一项，从左边算起
+   * @param {object}  options   index           {number}    是  tabBar 的哪一项，从左边算起，从0开始
    *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
-   * @returns {Promise}
+   * @returns {Promise}         errMsg          {string}        "showTabBarRedDot:ok"
    */
   async showTabBarRedDot(options) {
     return this.setOption('showTabBarRedDot', options);
@@ -289,9 +348,9 @@ class WeChat {
    *                            desc            {Object}    否  可选的字体描述符
    *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
    *                  options.desc 结构
-   *                            style           {string}    否  默认值：'normal'  字体样式（可选值为 normal / italic / oblique）
-   *                            weight          {string}    否  默认值：'normal'  字体粗细（可选值为 normal / bold / 100 / 200../ 900）
-   *                            variant         {string}    否  默认值：'normal'  设置小型大写字母的字体显示文本（可选值为 normal / small-caps / inherit）
+   *                            style           {string}    否  默认值： 'normal'  字体样式（可选值为 normal / italic / oblique）
+   *                            weight          {string}    否  默认值： 'normal'  字体粗细（可选值为 normal / bold / 100 / 200../ 900）
+   *                            variant         {string}    否  默认值： 'normal'  设置小型大写字母的字体显示文本（可选值为 normal / small-caps / inherit）
    * @returns {Promise}
    */
   async loadFontFace(options) {
@@ -301,7 +360,7 @@ class WeChat {
    * 停止当前页面下拉刷新。
    *
    * @param {object}  options   complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
-   * @returns {Promise}
+   * @returns {Promise}         errMsg          {string}        "stopPullDownRefresh:ok"
    */
   async stopPullDownRefresh(options) {
     return this.setOption('stopPullDownRefresh', options);
@@ -310,9 +369,9 @@ class WeChat {
    * 将页面滚动到目标位置
    *
    * @param {object}  options   scrollTop       {number}    是  滚动到页面的目标位置，单位 px
-   *                            duration        {number}    否  默认值：300  滚动动画的时长，单位 ms
+   *                            duration        {number}    否  默认值： 300  滚动动画的时长，单位 ms
    *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
-   * @returns {Promise}
+   * @returns {Promise}         errMsg          {string}        "pageScrollTo:ok"
    */
   async pageScrollTo(options) {
     return this.setOption('pageScrollTo', options);
@@ -325,7 +384,7 @@ class WeChat {
    *
    * @param {object}  options   text            {string}    是  置顶栏文字
    *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
-   * @returns {Promise}
+   * @returns {Promise}         errMsg          {string}        "setTopBarText:ok"
    */
   async setTopBarText(options) {
     return this.setOption('setTopBarText', options);
@@ -409,9 +468,9 @@ class WeChat {
    * @param {object}  options   url             {string}    是  服务器接口地址  
    *                            data            {string/object/ArrayBuffer}    否  请求的参数  
    *                            header          {Object}    否  设置请求的 header，header 中不能设置 Referer。content-type 默认为 application/json
-   *                            method          {string}    否  默认值：GET   HTTP 请求方法（可选值：OPTIONS / GET / HEAD / POST / PUT / DELETE / TRACE / CONNECT）
-   *                            dataType        {string}    否  默认值：json  返回的数据格式（可选值：json 返回的数据为 JSON，返回后会对返回的数据进行一次 JSON.parse；其他 不对返回的内容进行 JSON.parse）
-   *                            responseType    {string}    否  默认值：text  响应的数据类型（可选值：text  响应的数据为文本；arraybuffer 响应的数据为 ArrayBuffer）
+   *                            method          {string}    否  默认值： GET   HTTP 请求方法（可选值：OPTIONS / GET / HEAD / POST / PUT / DELETE / TRACE / CONNECT）
+   *                            dataType        {string}    否  默认值： json  返回的数据格式（可选值：json 返回的数据为 JSON，返回后会对返回的数据进行一次 JSON.parse；其他 不对返回的内容进行 JSON.parse）
+   *                            responseType    {string}    否  默认值： text  响应的数据类型（可选值：text  响应的数据为文本；arraybuffer 响应的数据为 ArrayBuffer）
    *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
    * @returns {Promise}         errMsg          {string}        "request:ok"
    *                            data            {string/Object/Arraybuffer} 服务器返回的数据
@@ -432,7 +491,7 @@ class WeChat {
    *                            statusCode      {number}        服务器返回的 HTTP 状态码
    *                            header          {Object}        服务器返回的 HTTP Response Header
    */
-  async get(url, data, header) {
+  async get(url = '', data = {}, header) {
     return this.setOption('request', Object.assign({}, { method: 'GET', url, data, header }));
   }
   /**
@@ -446,7 +505,7 @@ class WeChat {
    *                            statusCode      {number}        服务器返回的 HTTP 状态码
    *                            header          {Object}        服务器返回的 HTTP Response Header
    */
-  async post(url, data, header) {
+  async post(url = '', data = {}, header) {
     return this.setOption('request', Object.assign({}, { method: 'POST', url, data, header }));
   }
   /**
@@ -460,7 +519,7 @@ class WeChat {
    *                            statusCode      {number}        服务器返回的 HTTP 状态码
    *                            header          {Object}        服务器返回的 HTTP Response Header
    */
-  async put(url, data, header) {
+  async put(url = '', data = {}, header) {
     return this.setOption('request', Object.assign({}, { method: 'PUT', url, data, header }));
   }
   /**
@@ -474,7 +533,7 @@ class WeChat {
    *                            statusCode      {number}        服务器返回的 HTTP 状态码
    *                            header          {Object}        服务器返回的 HTTP Response Header
    */
-  async delete(url, data, header) {
+  async delete(url = '', data = {}, header) {
     return this.setOption('request', Object.assign({}, { method: 'DELETE', url, data, header }));
   }
 
@@ -516,7 +575,7 @@ class WeChat {
    * @param {object}  options   url             {string}    是  服务器 wss 接口地址
    *                            header          {Object}    否  HTTP 请求的 Header，Header 中不能设置 Referer  
    *                            protocols       {Array.<string>}  否  子协议数组
-   *                            tcpNoDelay      {boolean}   否  默认值：false  文件对应的 key，在服务端可以通过这个 key 获取文件的二进制内容
+   *                            tcpNoDelay      {boolean}   否  默认值： false  文件对应的 key，在服务端可以通过这个 key 获取文件的二进制内容
    *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
    * @returns {Promise}         errMsg          {string}        "connectSocket:ok"
    *                            statusCode      {number}        服务器返回的 HTTP 状态码
@@ -578,7 +637,7 @@ class WeChat {
   /**
    * 关闭 WebSocket 连接
    *
-   * @param {object}  options   code            {number}    否  默认值：1000（表示正常关闭连接）  一个数字值表示关闭连接的状态号，表示连接被关闭的原因。
+   * @param {object}  options   code            {number}    否  默认值： 1000（表示正常关闭连接）  一个数字值表示关闭连接的状态号，表示连接被关闭的原因。
    *                            reason          {string}    否  一个可读的字符串，表示连接被关闭的原因。这个字符串必须是不长于 123 字节的 UTF-8 文本（不是字符）。
    *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
    * @returns {Promise}         errMsg          {string}        "closeSocket:ok"
@@ -586,6 +645,80 @@ class WeChat {
    */
   async closeSocket(options) {
     return this.setOption('closeSocket', options);
+  }
+  /**
+   * 保存图片到系统相册
+   * 调用前需要 用户授权 scope.writePhotosAlbum
+   *
+   * @param {object}  options   filePath        {string}    是  图片文件路径，可以是临时文件路径或永久文件路径，不支持网络图片路径
+   *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
+   * @returns {Promise}         errMsg          {string}        "saveImageToPhotosAlbum:ok"
+   *                            statusCode      {number}        服务器返回的 HTTP 状态码
+   */
+  async saveImageToPhotosAlbum(options) {
+    return this.setOption('saveImageToPhotosAlbum', options);
+  }
+  /**
+   * 在新页面中全屏预览图片
+   *
+   * @param {object}  options   urls            {Array.<string>}  是                  需要预览的图片链接列表。2.2.3 起支持云文件ID。
+   *                            current         {string}    否  默认值：urls 的第一张   当前显示图片的链接filePath        {string}    是  图片文件路径，可以是临时文件路径或永久文件路径，不支持网络图片路径
+   *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
+   * @returns {Promise}         errMsg          {string}        "previewImage:ok"
+   *                            statusCode      {number}        服务器返回的 HTTP 状态码
+   */
+  async previewImage(options) {
+    return this.setOption('previewImage', options);
+  }
+  /**
+   * 获取图片信息
+   * 网络图片需先配置download域名才能生效
+   *
+   * @param {object}  options   src             {string}    是  图片的路径，可以是相对路径、临时文件路径、存储文件路径、网络图片路径
+   *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
+   * @returns {Promise}         errMsg          {string}        "getImageInfo:ok"
+   *                            statusCode      {number}        服务器返回的 HTTP 状态码
+   */
+  async getImageInfo(options) {
+    return this.setOption('getImageInfo', options);
+  }
+  /**
+   * 压缩图片接口，可选压缩质量
+   *
+   * @param {object}  options   src             {string}    是  图片路径，图片的路径，可以是相对路径、临时文件路径、存储文件路径
+   *                            quality         {number}    否  默认值：80  压缩质量，范围0～100，数值越小，质量越低，压缩率越高（仅对jpg有效）
+   *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
+   * @returns {Promise}         errMsg          {string}        "compressImage:ok"
+   *                            statusCode      {number}        服务器返回的 HTTP 状态码
+   */
+  async compressImage(options) {
+    return this.setOption('compressImage', options);
+  }
+  /**
+   * 从客户端会话选择文件
+   *
+   * @param {object}  options   count           {number}          是  最多可以选择的文件个数，可以 0～100
+   *                            type            {string}          否  默认值：'all'  所选的文件的类型
+   *                            extension       {Array.<string>}  否  根据文件拓展名过滤，仅 type==file 时有效。每一项都不能是空字符串。默认不过滤。
+   *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
+   * @returns {Promise}         errMsg          {string}        "chooseMessageFile:ok"
+   *                            statusCode      {number}        服务器返回的 HTTP 状态码
+   */
+  async chooseMessageFile(options) {
+    return this.setOption('chooseMessageFile', options);
+  }
+  /**
+   * 从本地相册选择图片或使用相机拍照
+   *
+   * @param {object}  options   count           {number}          否  默认值：9                           最多可以选择的图片张数
+   *                            sizeType        {Array.<string>}  否  默认值：['original', 'compressed']  所选的图片的尺寸
+   *                            sourceType      {Array.<string>}  否  默认值：['album', 'camera']         选择图片的来源
+   *                            complete        {function}  否  接口调用结束的回调函数（调用成功、失败都会执行）
+   * @returns {Promise}         errMsg          {string}        "chooseImage:ok"
+   *                            statusCode      {number}        服务器返回的 HTTP 状态码
+   */
+  async chooseImage(options) {
+    return this.setOption('chooseImage', options);
   }
 }
 module.exports = WeChat;
